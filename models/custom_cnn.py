@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class CustomDepthCNN(nn.Module):
     def __init__(self):
@@ -10,12 +11,14 @@ class CustomDepthCNN(nn.Module):
         self.encoder = nn.Sequential(
             # Input: RGB image (3 channels). Output: 64 feature maps.
             nn.Conv2d(3, 64, kernel_size=3, padding=1), 
+            nn.BatchNorm2d(64),
             # CONCEPT: Activation (ReLU) - introduces non-linearity so the model can learn complex relationships.
             nn.ReLU(),                                  
             # CONCEPT: Max Pooling - reduces spatial size (downsampling) while keeping important features.
             nn.MaxPool2d(2, 2),                         
             
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
@@ -33,6 +36,8 @@ class CustomDepthCNN(nn.Module):
 
     def forward(self, x):
         # This defines the "Flow" of data: Image -> Encoder -> Decoder -> Depth Map.
+        input_size = x.shape[-2:]
         x = self.encoder(x)
         x = self.decoder(x)
+        x = F.interpolate(x, size=input_size, mode="bilinear", align_corners=False)
         return x
