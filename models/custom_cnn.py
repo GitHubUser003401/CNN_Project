@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class CustomDepthCNN(nn.Module):
     def __init__(self):
@@ -35,6 +36,8 @@ class CustomDepthCNN(nn.Module):
 
     def forward(self, x):
         # This defines the "Flow" of data: Image -> Encoder -> Decoder -> Depth Map.
+        input_size = x.shape[-2:]
         x = self.encoder(x)
         x = self.decoder(x)
+        x = F.interpolate(x, size=input_size, mode="bilinear", align_corners=False)
         return x
